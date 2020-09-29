@@ -3,7 +3,9 @@
 from fastapi import FastAPI, HTTPException
 from starlette.middleware.cors import CORSMiddleware
 
+from simulator.api.api_v1.api import api_router
 from simulator.core import handlers
+from simulator.settings.config import settings
 
 
 def create_app(**kwargs) -> FastAPI:
@@ -37,9 +39,7 @@ def register_middleware(application: FastAPI):
 
 
 def register_router(application: FastAPI):
-    @application.get("/")
-    async def root():
-        return {"message": "Hello World"}
+    application.include_router(api_router, prefix=settings.API_V1_STR)
 
 
 app = create_app()
