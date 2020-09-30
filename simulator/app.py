@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from fastapi import FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
 
 from simulator.api.api_v1.api import api_router
@@ -24,7 +25,8 @@ def register_event_handler(application: FastAPI):
 
 def register_error_handler(application: FastAPI):
     application.add_exception_handler(HTTPException, handlers.http_error_handler)
-    application.add_exception_handler(HTTPException, handlers.http422_error_handler)
+    application.add_exception_handler(RequestValidationError,
+                                      handlers.http422_error_handler)
 
 
 def register_middleware(application: FastAPI):

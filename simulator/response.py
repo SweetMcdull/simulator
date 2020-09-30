@@ -22,4 +22,4 @@ class Success(Response):
 class Failure(Response):
     code = '400'
     msg = '失败'
-    errmsg: Any = None
+    # errmsg: Any = None

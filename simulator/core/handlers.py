@@ -37,7 +37,7 @@ async def shutdown_event() -> None:
 async def http_error_handler(_: Request, exc: HTTPException):
     status_code = status.HTTP_200_OK
     # status_code = exc.status_code
-    return JSONResponse(Failure(msg=exc.detail), status_code=status_code)
+    return JSONResponse(Failure(msg=exc.detail).dict(), status_code=status_code)
 
 
 async def http422_error_handler(_: Request,
@@ -45,5 +45,5 @@ async def http422_error_handler(_: Request,
                                     RequestValidationError, ValidationError],
                                 ) -> JSONResponse:
     status_code = status.HTTP_200_OK
-    return JSONResponse(Failure(msg='参数校验错误', errmsg=exc.errors()),
+    return JSONResponse(Failure(msg='参数校验错误', errmsg=exc.errors()).dict(),
                         status_code=status_code)
