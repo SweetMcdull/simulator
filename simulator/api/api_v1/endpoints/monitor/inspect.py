@@ -5,6 +5,6 @@ from fastapi import APIRouter
 router = APIRouter()
 
 
-@router.post('/inspect', summary='监控查询')
-def monitor_inspect():
+@router.post('/active_tasks', summary='运行中的任务')
+def active_tasks():
     pass
