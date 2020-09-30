@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import asyncio
+
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
+from starlette.websockets import WebSocket
 
+from simulator import celery_app
+from simulator.core import states
 from simulator.api.api_v1.api import api_router
 from simulator.core import handlers
 from simulator.settings.config import settings
@@ -45,3 +50,40 @@ def register_router(application: FastAPI):
 
 
 app = create_app()
+
+
+@app.websocket('/{task_id}')
+async def get_task_state(
+        task_id: str,
+        websocket: WebSocket
+):
+    await websocket.accept()
+
+    while True:
+        async_result = celery_app.AsyncResult(task_id)
+        state = async_result.status
+        if state in [states.PROGRESS, states.PAUSE]:
+            result = {
+                'state': async_result.status,
+                'progress': async_result.result['progress'] * 100,
+                'result': async_result.result['result']
+            }
+        elif state == states.FAILURE:
+            result = {
+                'state': async_result.status,
+                'traceback': async_result.traceback
+            }
+        elif state == states.SUCCESS:
+            result = {
+                'state': async_result.status,
+                'progress': 100,
+                'result': async_result.result['result']
+            }
+        else:
+            result = {
+                'state': state,
+            }
+
+        await websocket.send_json(result)
+
+        await asyncio.sleep(1)

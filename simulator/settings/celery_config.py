@@ -2,6 +2,9 @@
 # -*- coding: utf-8 -*-
 import os
 
+watch_url: str = 'redis://127.0.0.1:6379/2'
+back_server: str = 'http://127.0.0.1:50001'
+
 broker_url = 'redis://127.0.0.1:6379/1'
 result_backend = 'redis://127.0.0.1:6379/2'
 
