@@ -18,3 +18,6 @@ worker_task_log_format = (
     "[%(task_name)s(%(task_id)s)] %(message)s"
 )
 worker_log_format = "[%(asctime)s: %(levelname)s/%(processName)s] %(message)s"
+
+
+client_secret = "F194tBv1Goeoa9dcD4RA9wR2eiMjBxNJI1H5uf7LHM8"

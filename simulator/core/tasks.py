@@ -16,7 +16,7 @@ from modellibrary.src.main.python.core.algorithm.process import StatusCode
 
 from simulator import celery_app
 from simulator.core.command import CommandType
-from simulator.settings.celery_config import back_server, watch_url
+from simulator.settings.celery_config import back_server, watch_url, client_secret
 
 logger = get_task_logger(__name__)
 
@@ -68,9 +68,10 @@ class BaseTask(celery.Task):
 
     def update_client_state(self, state):
         url = parse.urljoin(back_server, '/api/v1/simulate/update_state')
+        headers = {"secret": client_secret}
         with httpx.Client(timeout=5) as client:
             try:
-                r = client.post(url, json={
+                r = client.post(url, headers=headers, json={
                     'task_id': self.request.id,
                     'state': state
                 })
@@ -81,9 +82,10 @@ class BaseTask(celery.Task):
 
     def save_client_result(self, result: dict):
         url = parse.urljoin(back_server, '/api/v1/simulate/save_result')
+        headers = {"secret": client_secret}
         with httpx.Client(timeout=5) as client:
             try:
-                client.post(url, json=result)
+                client.post(url, json=result, headers=headers)
             except HTTPError as e:
                 self.update_state(state=states.FAILURE, traceback=e.args)
                 logger.error(f'{self.request.id} 请求保存结果接口失败 {e.args}')
