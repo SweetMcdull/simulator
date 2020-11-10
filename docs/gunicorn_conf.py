@@ -8,7 +8,7 @@ cpu_count = os.cpu_count()
 # 进程名
 proc_name = 'task_service'
 # 守护模式
-daemon = False
+daemon = True
 # 项目根路径
 chdir = str(pathlib.Path.cwd())
 print("*"*50)
