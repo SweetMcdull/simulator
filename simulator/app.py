@@ -86,4 +86,4 @@ async def get_task_state(
 
         await websocket.send_json(result)
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
