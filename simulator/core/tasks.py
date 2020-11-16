@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import json
 import time
+from datetime import datetime
 from urllib import parse
 
 import celery
@@ -64,6 +65,7 @@ class BaseTask(celery.Task):
                     raise ValueError(f'无效的命令:{command}')
 
     def update_progress(self, state, data):
+        data["start_time"] = self.start_time.strftime('%Y-%m-%d %H:%M:%S')
         self.update_state(state=state, meta=data)
 
     def update_client_state(self, state):
@@ -94,15 +96,20 @@ class BaseTask(celery.Task):
 
 @celery_app.task(base=BaseTask, bind=True, name='simulate-task')
 def simulate(self, params: dict):
+    self.start_time = datetime.now()
     task_id = self.request.id
     self.update_client_state(states.STARTED)
     self.register_subscribe()
     process_plus = ProcessPlus(data=params)
     process_plus.arithmetic.solve(self.monitor, self.update_progress)
     process_plus.arithmetic.save_result()
+    end_time = datetime.now()
 
     result = {
         'progress': 100,
+        "start_time": self.start_time.strftime('%Y-%m-%d %H:%M:%S'),
+        "end_time": end_time.strftime('%Y-%m-%d %H:%M:%S'),
+        "cost_time": round((end_time - self.start_time).total_seconds(), 3),
         'result': process_plus.arithmetic.get_current_result(),
     }
     self.save_client_result({
