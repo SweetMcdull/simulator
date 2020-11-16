@@ -13,6 +13,7 @@ celery = {version = "4.4.7", extras = ["redis"]}
 websockets = "^8.1"
 httpx = "^0.15.4"
 scipy = "^1.5.2"
+pymysql = "^0.10.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"
