@@ -59,18 +59,18 @@ class BaseTask(celery.Task):
                     logger.info(f'{self.request.id}: 接受到*终止*信息')
                     arithmetic.process.status = StatusCode.STOP
                     self.update_state(state=StatusCode.STOP.value)
-                    self.update_client_state(TaskStatusEnum.STOP.value)
+                    self.update_client_state(TaskStatusEnum.STOP)
                     raise Ignore()
                 elif CommandType(command) == CommandType.PAUSE:
                     logger.info(f'{self.request.id}: 接受到*暂停*信息')
                     arithmetic.process.status = TaskStatusEnum.PAUSE
                     self.update_state(state=StatusCode.PAUSE.value)
-                    self.update_client_state(TaskStatusEnum.PAUSE.value)
+                    self.update_client_state(TaskStatusEnum.PAUSE)
                 elif CommandType(command) == CommandType.RESUME:
                     logger.info(f'{self.request.id}: 接受到*恢复*信息')
                     arithmetic.process.status = TaskStatusEnum.PROGRESS
                     self.update_state(state=StatusCode.PROGRESS.value)
-                    self.update_client_state(TaskStatusEnum.PROGRESS.value)
+                    self.update_client_state(TaskStatusEnum.PROGRESS)
                 else:
                     raise ValueError(f'无效的命令:{command}')
 
