@@ -21,7 +21,7 @@ worker_log_format = "[%(asctime)s: %(levelname)s/%(processName)s] %(message)s"
 
 client_secret = "F194tBv1Goeoa9dcD4RA9wR2eiMjBxNJI1H5uf7LHM8"
 
-db_host = "127.0.0.1"
+db_host = "192.168.2.129"
 db_port = 3306
 db_user = "prosee_dev"
 db_password = "prosee_dev"
