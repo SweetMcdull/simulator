@@ -14,6 +14,7 @@ from celery.utils.log import get_task_logger
 from httpx import HTTPError
 from modellibrary import ProcessPlus
 from modellibrary.src.main.python.core.algorithm.process import StatusCode
+from pymysql import MySQLError
 
 from simulator import celery_app
 from simulator.core.command import CommandType
@@ -58,18 +59,18 @@ class BaseTask(celery.Task):
                     logger.info(f'{self.request.id}: 接受到*终止*信息')
                     arithmetic.process.status = StatusCode.STOP
                     self.update_state(state=StatusCode.STOP.value)
-                    self.update_client_state_db(TaskStatusEnum.STOP.value)
+                    self.update_client_state(TaskStatusEnum.STOP.value)
                     raise Ignore()
                 elif CommandType(command) == CommandType.PAUSE:
                     logger.info(f'{self.request.id}: 接受到*暂停*信息')
                     arithmetic.process.status = TaskStatusEnum.PAUSE
                     self.update_state(state=StatusCode.PAUSE.value)
-                    self.update_client_state_db(TaskStatusEnum.PAUSE.value)
+                    self.update_client_state(TaskStatusEnum.PAUSE.value)
                 elif CommandType(command) == CommandType.RESUME:
                     logger.info(f'{self.request.id}: 接受到*恢复*信息')
                     arithmetic.process.status = TaskStatusEnum.PROGRESS
                     self.update_state(state=StatusCode.PROGRESS.value)
-                    self.update_client_state_db(TaskStatusEnum.PROGRESS.value)
+                    self.update_client_state(TaskStatusEnum.PROGRESS.value)
                 else:
                     raise ValueError(f'无效的命令:{command}')
 
@@ -124,8 +125,9 @@ class BaseTask(celery.Task):
         """
 
         with db.auto_commit():
-            rowcount = db.execute(query=query, args=args)
-            if rowcount != 1:
+            try:
+                rowcount = db.execute(query=query, args=args)
+            except MySQLError as e:
                 logger.warning(f"{task_id} 更新状态失败")
 
     def save_client_result(self, result):
