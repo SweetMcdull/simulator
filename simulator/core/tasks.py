@@ -161,6 +161,8 @@ class BaseTask(celery.Task):
                     str(list(map(lambda x: float(x), var_result)))
                 ])
         with db.auto_commit():
+            db.execute(query="DELETE from schema_result WHERE schema_id = %s",
+                       args=[schema_id, ])
             rowcount = db.execute_many(query=query, args=args)
 
 
