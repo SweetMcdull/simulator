@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 
+import websockets
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from starlette.middleware.cors import CORSMiddleware
@@ -11,6 +12,7 @@ from simulator import celery_app
 from simulator.core import states
 from simulator.api.api_v1.api import api_router
 from simulator.core import handlers
+from simulator.core.states import TaskStatusEnum
 from simulator.settings.config import settings
 
 
@@ -61,21 +63,21 @@ async def get_task_state(
 
     while True:
         async_result = celery_app.AsyncResult(task_id)
-        state = async_result.status
-        if state in [states.PROGRESS, states.PAUSE]:
+        state = TaskStatusEnum.__members__[async_result.status].value
+        if state in [TaskStatusEnum.PROGRESS, TaskStatusEnum.PAUSE]:
             result = {
-                'state': async_result.status,
+                'state': state,
                 'progress': async_result.result['progress'] * 100,
                 'result': async_result.result['result']
             }
-        elif state == states.FAILURE:
+        elif state == TaskStatusEnum.FAILURE:
             result = {
-                'state': async_result.status,
+                'state': state,
                 'traceback': async_result.traceback
             }
-        elif state == states.SUCCESS:
+        elif state == TaskStatusEnum.SUCCESS:
             result = {
-                'state': async_result.status,
+                'state': state,
                 'progress': 100,
                 'result': async_result.result['result']
             }
@@ -84,6 +86,9 @@ async def get_task_state(
                 'state': state,
             }
 
-        await websocket.send_json(result)
-
+        try:
+            await websocket.send_json(result)
+        except websockets.ConnectionClosedError:
+            await websocket.close()
+            break
         await asyncio.sleep(2)
