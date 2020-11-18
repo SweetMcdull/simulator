@@ -109,19 +109,12 @@ class BaseTask(celery.Task):
         task_id = self.request.id
         db = MysqlHelper(host=db_host, port=db_port, user=db_user, password=db_password,
                          database=db_name)
-        update_columns = " status=%s "
+
         state_value = state.value
-        args = [state_value]
-        if started:
-            update_columns += ",start_time=%s "
-            args.append(self.start_time)
-        if ended:
-            update_columns += ",end_time=%s "
-            args.append(self.end_time)
-        args.append(task_id)
+        args = [state_value, task_id]
 
         query = f"""
-        update `schema` set {update_columns} where task_id=%s
+        update `schema` set status=%s where task_id=%s
         """
 
         with db.auto_commit():
@@ -161,8 +154,14 @@ class BaseTask(celery.Task):
                     str(list(map(lambda x: float(x), var_result)))
                 ])
         with db.auto_commit():
+            # 删除历史记录
             db.execute(query="DELETE from schema_result WHERE schema_id = %s",
                        args=[schema_id, ])
+            # 更新启动时间、结束时间
+            db.execute(
+                query="update `schema` set start_time=%s,end_time=%s where task_id=%s",
+                args=[self.start_time, self.end_time, task_id])
+            # 保存结果
             rowcount = db.execute_many(query=query, args=args)
 
 
