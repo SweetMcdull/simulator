@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 
 class Response(BaseModel):
-    code: str
+    code: int
     msg: str
     result: Any = None
 
@@ -15,11 +15,11 @@ class Response(BaseModel):
 
 
 class Success(Response):
-    code = '200'
-    msg = '操作成功'
+    code = 200
+    msg = '成功'
 
 
 class Failure(Response):
-    code = '400'
+    code = 400
     msg = '失败'
     # errmsg: Any = None
