@@ -36,7 +36,7 @@ class Manager:
         current_task_count = sum([len(tasks) for _, tasks in active_tasks.items()])
         if current_task_count >= max_count:
             raise HTTPException(status_code=200,
-                                detail=f"创建失败，超过最大最任务数{max_count} 当前任务数:"
+                                detail=f"创建失败，超过最大任务数{max_count} 当前任务数:"
                                        f"{current_task_count}")
 
         result = self.app.send_task(name=task_name, task_id=task_id, args=args,
