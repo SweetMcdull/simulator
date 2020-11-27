@@ -210,7 +210,7 @@ class BaseTask(celery.Task):
 
 
 @celery_app.task(base=BaseTask, bind=True, name='simulate-task')
-def simulate(self, params: dict):
+def simulate(self, params: dict, use_init=False):
     self.start_time = datetime.now()
     self.end_time = None
     task_id = self.request.id
@@ -231,7 +231,10 @@ def simulate(self, params: dict):
         'result': current_result,
     }
     self.save_client_result(process_plus.arithmetic.result)
-    self.update_init_input(process_plus.arithmetic.result)
+
+    if use_init:
+        logger.info(f"{task_id}:更新方案初始浓度")
+        self.update_init_input(process_plus.arithmetic.result)
     return result
 
 

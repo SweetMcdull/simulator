@@ -17,7 +17,7 @@ router = APIRouter()
 @router.post('/create', summary='创建仿真任务')
 def create_simulate(params: dict = Body(...)):
     task_id = manager.create_task('simulate-task', task_id=str(int(time.time() * 1000)),
-                                  args=(params,))
+                                  args=(params["simulate"],), kwargs=params["meta"])
     return Success(result=task_id)
 
 
