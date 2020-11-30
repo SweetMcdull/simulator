@@ -123,7 +123,7 @@ class BaseTask(celery.Task):
             except MySQLError as e:
                 logger.warning(f"{task_id} 更新状态失败")
 
-    def save_client_result(self, result):
+    def save_client_result(self, result, meta_info):
         task_id = self.request.id
         db = MysqlHelper(host=db_host, port=db_port, user=db_user, password=db_password,
                          database=db_name)
@@ -139,9 +139,9 @@ class BaseTask(celery.Task):
         query = """
         INSERT INTO 
         `schema_result` 
-        (task_id,schema_id,model_id,variable_code,result) 
+        (task_id,schema_id,model_id,variable_code,result,meta_info) 
             values 
-         (%s , %s ,%s, %s ,%s )
+         (%s , %s ,%s, %s ,%s, %s )
         """
         args = []
         for model_id, m_result in result.items():
@@ -151,7 +151,8 @@ class BaseTask(celery.Task):
                     schema_id,
                     model_id,
                     code,
-                    str(list(map(lambda x: float(x), var_result)))
+                    str(list(map(lambda x: float(x), var_result))),
+                    json.dumps(meta_info)
                 ])
         with db.auto_commit():
             # 删除历史记录
@@ -164,9 +165,54 @@ class BaseTask(celery.Task):
             # 保存结果
             rowcount = db.execute_many(query=query, args=args)
 
+    def update_init_input(self, result):
+        task_id = self.request.id
+        db = MysqlHelper(host=db_host, port=db_port, user=db_user, password=db_password,
+                         database=db_name)
+        args = [task_id]
+        query = """
+        SELECT
+        s.id,
+        s.schema_id,
+        s.`value`,
+        s.user_value,
+        s.steady_value,
+        s.last_value,
+        p.`value` AS default_value,
+        p.model_id,
+        t.type_id,
+        t.`code`
+        FROM
+            schema_parameter s
+            JOIN project_parameter p ON s.parameter_id = p.id
+            JOIN parameter t ON p.parameter_id = t.id 
+            JOIN `schema` ON `schema`.id= s.schema_id 
+        WHERE
+            `schema`.task_id = %s 
+        AND t.type_id = 'B003'
+        """
+        input_data = db.query_all(query, args)
+
+        query = """
+        UPDATE schema_parameter SET `last_value`=%s WHERE `id`=%s
+        """
+        args = []
+        for record in input_data:
+            input_id = record["id"]
+            model_id = record["model_id"]
+            var_name = record["code"]
+            model_data = result.get(model_id)
+            if model_data:
+                if model_data.get(var_name):
+                    value = model_data.get(var_name)
+                    args.append([float(value[-1]), input_id])
+        with db.auto_commit():
+            db.execute_many(query, args)
+
 
 @celery_app.task(base=BaseTask, bind=True, name='simulate-task')
-def simulate(self, params: dict):
+def simulate(self, params: dict, use_init=False):
+    meta_info = params["sys_config"]['simulate_config']
     self.start_time = datetime.now()
     self.end_time = None
     task_id = self.request.id
@@ -178,14 +224,19 @@ def simulate(self, params: dict):
     process_plus.arithmetic.save_result()
     self.end_time = datetime.now()
 
+    current_result = process_plus.arithmetic.get_current_result()
     result = {
         'progress': 100,
         "start_time": self.start_time.strftime('%Y-%m-%d %H:%M:%S'),
         "end_time": self.end_time.strftime('%Y-%m-%d %H:%M:%S'),
         "cost_time": round((self.end_time - self.start_time).total_seconds(), 3),
-        'result': process_plus.arithmetic.get_current_result(),
+        'result': current_result,
     }
-    self.save_client_result(process_plus.arithmetic.result)
+    self.save_client_result(process_plus.arithmetic.result, meta_info)
+
+    if use_init:
+        logger.info(f"{task_id}:更新方案初始浓度")
+        self.update_init_input(process_plus.arithmetic.result)
     return result
 
 
