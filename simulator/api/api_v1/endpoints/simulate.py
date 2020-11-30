@@ -18,7 +18,7 @@ router = APIRouter()
 def create_simulate(params: dict = Body(...)):
     meta_info = params.get("meta", {})
     use_init = meta_info.get("use_init")
-    if use_init == 0:
+    if use_init == 2:
         use_init = True
     task_id = manager.create_task('simulate-task', task_id=str(int(time.time() * 1000)),
                                   args=(params["simulate"],), kwargs={"use_init": use_init})
